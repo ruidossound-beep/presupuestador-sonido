@@ -1,0 +1,125 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RDS Sonido | Presupuestos</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f1f3f5;color:#20252b;font:16px Arial,sans-serif}
+header{background:#171b20;color:white;padding:22px 16px}
+header h1{margin:0;font-size:25px}header p{margin:7px 0 0;color:#c4c9ce}
+main{max-width:1000px;margin:auto;padding:14px}
+section{background:white;border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:0 2px 7px #0001}
+h2{font-size:19px;margin:0 0 14px}
+label{display:block;font-size:13px;font-weight:bold;margin:10px 0 5px}
+input,textarea,select{width:100%;padding:12px;border:1px solid #cbd0d5;border-radius:7px;font:inherit;background:white}
+textarea{min-height:65px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+button{border:0;border-radius:8px;padding:12px;font-weight:bold;font-size:15px;cursor:pointer}
+.primary{background:#20262d;color:white}.green{background:#147d48;color:white}.light{background:#e8edf1;color:#20252b}.red{background:#fbe5e5;color:#a32020}
+.tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
+.tab{background:#e8edf1}.tab.active{background:#20262d;color:white}
+.items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.item{background:#edf1f4;text-align:left;min-height:55px;line-height:1.25}
+.item small{display:block;color:#68717a;margin-top:4px}
+.line{display:flex;align-items:center;gap:7px;border-bottom:1px solid #eee;padding:10px 0}
+.line .name{flex:1;min-width:0;overflow-wrap:anywhere}
+.line button{padding:8px 12px}
+.qty{min-width:20px;text-align:center;font-weight:bold}
+.total{font-size:25px;font-weight:bold}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.saved{display:flex;gap:8px;align-items:center;border-bottom:1px solid #eee;padding:10px 0}
+.saved span{flex:1;overflow-wrap:anywhere}
+.note{font-size:13px;color:#626b74}
+@media(min-width:650px){.items{grid-template-columns:repeat(3,minmax(0,1fr))}.actions{grid-template-columns:repeat(4,1fr)}}
+@media print{body{background:white}header{background:white;color:black;padding:0 0 12px}header p{color:#333}main{padding:0;max-width:none}.noPrint,#catalogo,#guardados,#acciones{display:none!important}section{box-shadow:none;border:1px solid #ddd;break-inside:avoid}input,textarea{border:0;padding:3px 0;appearance:none}.line button{display:none}.total{font-size:22px}}
+</style>
+</head>
+<body>
+<header><h1>RDS SONIDO</h1><p>Presupuestos de sonido, iluminación y eventos</p></header>
+<main>
+<section>
+<h2>Datos del presupuesto</h2>
+<div class="fields">
+<div><label>Cliente</label><input id="cliente" placeholder="Nombre del cliente"></div>
+<div><label>Evento</label><input id="evento" placeholder="Cumpleaños, show..."></div>
+<div><label>Lugar</label><input id="lugar" placeholder="Salón, localidad..."></div>
+<div><label>Fecha del evento</label><input id="fecha" type="date"></div>
+</div>
+<label>Notas y condiciones</label><textarea id="notas" placeholder="Horario, seña, condiciones..."></textarea>
+</section>
+<section id="catalogo">
+<h2>Agregar equipos y servicios</h2>
+<div class="tabs" id="tabs"></div>
+<div class="items" id="items"></div>
+<p class="note">Tocá un equipo para agregarlo. Si lo tocás de nuevo, aumenta la cantidad.</p>
+</section>
+<section>
+<h2>Equipos y servicios elegidos</h2>
+<div id="seleccion"><p class="note">Todavía no agregaste equipos.</p></div>
+<label>Precio final del presupuesto ($)</label>
+<input id="precio" type="number" min="0" step="any" placeholder="Ingresá el total acordado">
+<p class="note">No se calculan precios por equipo. El importe lo definís vos.</p>
+</section>
+<section id="acciones" class="noPrint">
+<h2>Guardar y compartir</h2>
+<div class="actions">
+<button class="green" onclick="guardar()">Guardar</button>
+<button class="primary" onclick="nuevo()">Nuevo</button>
+<button class="light" onclick="window.print()">Imprimir / PDF</button>
+<button class="light" onclick="exportar()">Copia de seguridad</button>
+</div>
+<label>Recuperar copia de seguridad</label>
+<input type="file" accept=".json,application/json" onchange="importar(event)">
+<p class="note">Los presupuestos guardados quedan en este navegador. Hacé copias de seguridad para no perderlos.</p>
+</section>
+<section id="guardados" class="noPrint">
+<h2>Presupuestos guardados</h2>
+<div id="lista"></div>
+</section>
+</main>
+<script>
+const catalogo={
+"Sonido":["Caja activa 12 pulgadas","Caja activa 15 pulgadas","Subwoofer 18 pulgadas","Subwoofer doble 18 pulgadas","Monitor activo 12 pulgadas","Monitor activo 15 pulgadas","Potencia de sonido","Consola Yamaha DM3","Consola Behringer XR18","Consola Soundcraft Ui16","Consola analógica","Stagebox digital","Multicable / snake"],
+"Micrófonos":["Micrófono dinámico tipo SM58","Micrófono dinámico tipo SM57","Micrófono inalámbrico de mano","Micrófono inalámbrico vincha","Micrófono condenser","Micrófono para bombo","Micrófono de instrumento","Micrófono ambiental"],
+"Accesorios":["Caja directa DI activa","Caja directa DI pasiva","Pie de micrófono","Pie jirafa","Pie de parlante","Cable XLR","Cable de señal","Alargue eléctrico","Zapatilla eléctrica","Distribución eléctrica"],
+"Iluminación":["Par LED","Par LED RGBW","Barra LED","Cabezal móvil Spot","Cabezal móvil Wash","Blinder","Máquina de humo","Controladora DMX","Dimmer"],
+"Estructuras":["Truss 1 metro","Truss 2 metros","Truss 3 metros","Base para truss","Trípode de iluminación","Tarima 2 x 1 m","Escenario","Vallas de contención"],
+"Servicios":["Operador de sonido","Operador de iluminación","Técnico adicional","Armado y desarmado","Transporte local","Transporte fuera de la ciudad","Grupo electrógeno"]
+};
+let categoria="Sonido", lineas=[], guardados=[], actual=null;
+const $=id=>document.getElementById(id);
+function leer(){try{guardados=JSON.parse(localStorage.getItem("rds_presupuestos")||"[]")}catch(e){guardados=[]}}
+function persistir(){localStorage.setItem("rds_presupuestos",JSON.stringify(guardados))}
+function escapar(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function mostrarTabs(){
+$("tabs").innerHTML=Object.keys(catalogo).map(c=>`<button class="tab ${c===categoria?"active":""}" onclick="categoria='${c}';mostrarTabs()">${c}</button>`).join("");
+$("items").innerHTML=catalogo[categoria].map(n=>`<button class="item" onclick="agregar('${n.replace(/'/g,"\\'")}')">${n}<small>+ Agregar</small></button>`).join("");
+}
+function agregar(nombre){let x=lineas.find(x=>x.nombre===nombre);if(x)x.cantidad++;else lineas.push({nombre,cantidad:1});dibujar()}
+function cambiar(i,d){lineas[i].cantidad+=d;if(lineas[i].cantidad<=0)lineas.splice(i,1);dibujar()}
+function borrar(i){lineas.splice(i,1);dibujar()}
+function dibujar(){
+$("seleccion").innerHTML=lineas.length?lineas.map((x,i)=>`<div class="line"><span class="name">${escapar(x.nombre)}</span><button class="light" onclick="cambiar(${i},-1)">−</button><span class="qty">${x.cantidad}</span><button class="light" onclick="cambiar(${i},1)">+</button><button class="red" onclick="borrar(${i})">×</button></div>`).join(""):'<p class="note">Todavía no agregaste equipos.</p>';
+}
+function datos(){return {id:actual||Date.now().toString(),cliente:$("cliente").value,evento:$("evento").value,lugar:$("lugar").value,fecha:$("fecha").value,notas:$("notas").value,precio:$("precio").value,lineas:lineas.map(x=>({...x})),actualizado:new Date().toISOString()}}
+function cargar(d){actual=d.id;$("cliente").value=d.cliente||"";$("evento").value=d.evento||"";$("lugar").value=d.lugar||"";$("fecha").value=d.fecha||"";$("notas").value=d.notas||"";$("precio").value=d.precio||"";lineas=(d.lineas||[]).map(x=>({...x}));dibujar();window.scrollTo(0,0)}
+function guardar(){
+if(!$("cliente").value.trim()&&!lineas.length){alert("Ingresá un cliente o agregá equipos antes de guardar.");return}
+let d=datos();let i=guardados.findIndex(x=>x.id===d.id);if(i>=0)guardados[i]=d;else guardados.unshift(d);
+try{persistir();actual=d.id;mostrarGuardados();alert("Presupuesto guardado.")}catch(e){alert("No se pudo guardar. Exportá una copia de seguridad o probá en Safari.")}
+}
+function mostrarGuardados(){
+$("lista").innerHTML=guardados.length?guardados.map(d=>`<div class="saved"><span><b>${escapar(d.cliente||"Sin cliente")}</b><br>${escapar(d.evento||"Evento sin nombre")} · ${escapar(d.fecha||"Sin fecha")}</span><button class="light" onclick="abrir('${d.id}')">Abrir</button><button class="light" onclick="duplicar('${d.id}')">Copiar</button><button class="red" onclick="eliminar('${d.id}')">×</button></div>`).join(""):'<p class="note">Todavía no hay presupuestos guardados.</p>';
+}
+function abrir(id){let d=guardados.find(x=>x.id===id);if(d)cargar(d)}
+function duplicar(id){let d=guardados.find(x=>x.id===id);if(d){cargar({...d,id:Date.now().toString(),cliente:d.cliente+" (copia)"});actual=null;window.scrollTo(0,0)}}
+function eliminar(id){if(confirm("¿Eliminar este presupuesto guardado?")){guardados=guardados.filter(x=>x.id!==id);persistir();mostrarGuardados()}}
+function nuevo(){if(confirm("¿Empezar un presupuesto nuevo? Guardá antes los cambios que quieras conservar.")){actual=null;lineas=[];["cliente","evento","lugar","fecha","notas","precio"].forEach(id=>$(id).value="");dibujar();window.scrollTo(0,0)}}
+function exportar(){let blob=new Blob([JSON.stringify(guardados,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="respaldo-presupuestos-rds.json";a.click();URL.revokeObjectURL(a.href)}
+function importar(ev){let f=ev.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let arr=JSON.parse(r.result);if(!Array.isArray(arr))throw Error();if(confirm("¿Importar "+arr.length+" presupuestos? Los existentes con el mismo código se actualizarán.")){arr.forEach(d=>{let i=guardados.findIndex(x=>x.id===d.id);if(i>=0)guardados[i]=d;else guardados.push(d)});persistir();mostrarGuardados();alert("Copia recuperada.")}}catch(e){alert("Ese archivo no parece una copia válida.")}ev.target.value=""};r.readAsText(f)}
+leer();mostrarTabs();dibujar();mostrarGuardados();
+</script>
+</body>
+</html>
